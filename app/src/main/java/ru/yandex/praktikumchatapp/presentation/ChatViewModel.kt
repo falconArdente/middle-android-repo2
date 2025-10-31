@@ -16,23 +16,22 @@ class ChatViewModel(
 
     private val repository = ChatRepository()
 
-    private val _messages = MutableStateFlow<List<Message>>(emptyList())
-    private val _shouldShowKeyboard = MutableStateFlow(false)
+    private val _chatState = MutableStateFlow<ChatState>(ChatState())
 
-    val messages: StateFlow<List<Message>> = _messages.asStateFlow()
-    val shouldShowKeyboard: StateFlow<Boolean> =
-        _shouldShowKeyboard.asStateFlow()    // Задание 3: добавьте состояние shouldShowKeyboard
+    val chatState: StateFlow<ChatState> = _chatState.asStateFlow()
 
-    // TODO Задание 4: замените messages и shouldShowKeyboard на state
+    //  Задание 4: замените messages и shouldShowKeyboard на state DONE
 
     init {
         viewModelScope.launch {
             while (isWithReplies) {
                 repository.getReplyMessage().collect { response ->
-                    val currentMessages = _messages.value
-                    _messages.value =
-                        currentMessages + Message.OtherMessage(response)
-                    if (_messages.value.isNotEmpty()) _shouldShowKeyboard.emit(true)
+                    val currentMessages = _chatState.value.messages
+                    val newMessages = currentMessages + Message.OtherMessage(response)
+                    _chatState.value = ChatState(
+                        messages = newMessages,
+                        shouldShowKeyboard = newMessages.isNotEmpty()
+                    )
                 }
             }
         }
@@ -40,8 +39,9 @@ class ChatViewModel(
 
     fun sendMyMessage(messageText: String) {
         viewModelScope.launch(Dispatchers.IO) {
-            val currentMessages = _messages.value
-            _messages.emit(currentMessages + Message.MyMessage(messageText))
+            val currentMessages = _chatState.value.messages
+            _chatState.value =
+                _chatState.value.copy(currentMessages + Message.MyMessage(messageText))
         }
     }
 }
