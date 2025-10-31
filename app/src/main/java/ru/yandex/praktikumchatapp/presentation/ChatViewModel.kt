@@ -1,5 +1,6 @@
 package ru.yandex.praktikumchatapp.presentation
 
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
@@ -16,10 +17,11 @@ class ChatViewModel(
     private val repository = ChatRepository()
 
     private val _messages = MutableStateFlow<List<Message>>(emptyList())
+    private val _shouldShowKeyboard = MutableStateFlow(false)
 
     val messages: StateFlow<List<Message>> = _messages.asStateFlow()
-
-    // TODO Задание 3: добавьте состояние shouldShowKeyboard
+    val shouldShowKeyboard: StateFlow<Boolean> =
+        _shouldShowKeyboard.asStateFlow()    // Задание 3: добавьте состояние shouldShowKeyboard
 
     // TODO Задание 4: замените messages и shouldShowKeyboard на state
 
@@ -27,11 +29,10 @@ class ChatViewModel(
         viewModelScope.launch {
             while (isWithReplies) {
                 repository.getReplyMessage().collect { response ->
-
                     val currentMessages = _messages.value
                     _messages.value =
                         currentMessages + Message.OtherMessage(response)
-
+                    if (_messages.value.isNotEmpty()) _shouldShowKeyboard.emit(true)
                 }
             }
         }
