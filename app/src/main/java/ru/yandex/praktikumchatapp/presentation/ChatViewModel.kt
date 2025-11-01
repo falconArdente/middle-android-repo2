@@ -3,10 +3,10 @@ package ru.yandex.praktikumchatapp.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandex.praktikumchatapp.data.ChatRepository
 
@@ -16,7 +16,7 @@ class ChatViewModel(
 
     private val repository = ChatRepository()
 
-    private val _chatState = MutableStateFlow<ChatState>(ChatState())
+    private val _chatState = MutableStateFlow(ChatState())
 
     val chatState: StateFlow<ChatState> = _chatState.asStateFlow()
 
@@ -38,10 +38,9 @@ class ChatViewModel(
     }
 
     fun sendMyMessage(messageText: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val currentMessages = _chatState.value.messages
-            _chatState.value =
-                _chatState.value.copy(currentMessages + Message.MyMessage(messageText))
+        _chatState.update { currentState ->
+            val currentMessages = currentState.messages
+            currentState.copy(currentMessages + Message.MyMessage(messageText))
         }
     }
 }

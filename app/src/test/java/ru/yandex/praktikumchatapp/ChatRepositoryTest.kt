@@ -1,14 +1,11 @@
 package ru.yandex.praktikumchatapp
 
 import app.cash.turbine.test
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -26,17 +23,15 @@ class ChatRepositoryTest {
 
     @Before
     fun setup() {
-        Dispatchers.setMain(testDispatcher)
         chatRepository = ChatRepository(chatApi)
     }
 
     @After
     fun teardown() {
-        Dispatchers.resetMain()
     }
 
     @Test
-    fun `getReplyMessage should return a non-empty string`() = runTest {
+    fun `getReplyMessage should return a non-empty string`() = runTest(testDispatcher) {
         val replyText = "Hello"
         `when`(chatApi.getReply())
             .thenReturn(

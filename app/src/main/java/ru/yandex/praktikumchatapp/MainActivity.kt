@@ -1,7 +1,6 @@
 package ru.yandex.praktikumchatapp
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -104,13 +103,11 @@ fun ChatScreen(
             if (chatState.value.shouldShowKeyboard && !focusBeenRequested.value) {
                 focusRequester.requestFocus()
                 focusBeenRequested.value = true
-                Log.d("focus","requested")
             }
             BasicTextField(
                 value = messageText.value,
                 onValueChange = { messageText.value = it },
                 modifier = Modifier
-
                     .weight(1f)
                     .padding(8.dp)
                     .background(Color.LightGray, shape = MaterialTheme.shapes.small)
