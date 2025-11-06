@@ -1,5 +1,10 @@
+import app.cash.turbine.test
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -32,14 +37,33 @@ class ChatViewModelTest {
     @Test
     fun `send message should update state with MyMessage`() = runTest {
         val message = Message.MyMessage("TestMessage")
-
-        // TODO Задание 5: допишите юнит-тест
+        viewModel.sendMyMessage(message.text)
+        viewModel.chatState.test {
+            assert(awaitItem().messages.contains(message))
+        }
+        // Задание 5: допишите юнит-тест Done
     }
 
     @Test
     fun testReceiveMessage_concurrentMessages() = runTest {
         val messagesToSend = (1..100).map { Message.MyMessage("Message $it") }
-
-        // TODO Задание 6: допишите юнит-тест
+        val scope = CoroutineScope(Job())
+        val jobList: MutableList<Job> = mutableListOf()
+        messagesToSend.forEach { message ->
+            jobList.add(
+                scope.launch(Dispatchers.IO) {
+                    viewModel.sendMyMessage(message.text)
+                }
+            )
+        }
+        jobList.joinAll()
+        viewModel.chatState.test {
+            val actualList = awaitItem().messages
+            messagesToSend.forEach {message ->
+                assert(actualList.contains(message))
+            }
+            assert(actualList.size == messagesToSend.size)
+        }
+        // Задание 6: допишите юнит-тест Done
     }
 }

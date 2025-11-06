@@ -1,6 +1,7 @@
 package ru.yandex.praktikumchatapp
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,16 +26,22 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import ru.yandex.praktikumchatapp.presentation.ChatState
 import ru.yandex.praktikumchatapp.presentation.ChatViewModel
 import ru.yandex.praktikumchatapp.presentation.Message
 import ru.yandex.praktikumchatapp.ui.theme.PraktikumChatAppTheme
@@ -71,19 +78,27 @@ fun ChatScreen(
     modifier: Modifier = Modifier
 ) {
     val viewModel = remember { ChatViewModel() }
-    val messagesList = viewModel.messages.observeAsState(emptyList())
+    val chatState = viewModel.chatState.collectAsStateWithLifecycle(ChatState())
     val messageText = remember { mutableStateOf("") }
-    // TODO Задание 3: добавьте focusRequester
+    val focusRequester = remember { FocusRequester() } // Задание 3: добавьте focusRequester Done
+    val focusBeenRequested = remember { mutableStateOf(false) }
+    LaunchedEffect(chatState.value.shouldShowKeyboard) {
+        Log.d("focus_", "LaunchedEffect")
+        if (chatState.value.shouldShowKeyboard && !focusBeenRequested.value) {
+            Log.d("focus_", "requestFocus()")
+            focusRequester.requestFocus()
+            focusBeenRequested.value = true
+        }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
-
         // Список сообщений
         LazyColumn(
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp)
         ) {
-            items(messagesList.value) { message ->
+            items(chatState.value.messages) { message ->
                 when (message) {
                     is Message.MyMessage -> MyMessageCard(message)
                     is Message.OtherMessage -> OtherMessageCard(message)
@@ -95,16 +110,18 @@ fun ChatScreen(
         Row(
             modifier = Modifier
                 .padding(16.dp)
-                // TODO Задание 3: добавьте focusRequester
+                // Задание 3: добавьте focusRequester Done
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             BasicTextField(
                 value = messageText.value,
                 onValueChange = { messageText.value = it },
                 modifier = Modifier
                     .weight(1f)
                     .padding(8.dp)
+                    .focusRequester(focusRequester)
                     .background(Color.LightGray, shape = MaterialTheme.shapes.small)
                     .padding(10.dp),
                 keyboardOptions = KeyboardOptions.Default.copy(

@@ -1,9 +1,12 @@
 package ru.yandex.praktikumchatapp.presentation
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.yandex.praktikumchatapp.data.ChatRepository
 
@@ -13,29 +16,31 @@ class ChatViewModel(
 
     private val repository = ChatRepository()
 
-    private val _messages = MutableLiveData<List<Message>>(emptyList())  // TODO Задание 1: замените на Flow
-    val messages: LiveData<List<Message>> = _messages
+    private val _chatState = MutableStateFlow(ChatState())
 
-    // TODO Задание 3: добавьте состояние shouldShowKeyboard
+    val chatState: StateFlow<ChatState> = _chatState.asStateFlow()
 
-    // TODO Задание 4: замените messages и shouldShowKeyboard на state
+    //  Задание 4: замените messages и shouldShowKeyboard на state DONE
 
     init {
         viewModelScope.launch {
             while (isWithReplies) {
                 repository.getReplyMessage().collect { response ->
-
-                    val currentMessages = _messages.value ?: emptyList()
-                    _messages.value =
-                        currentMessages + Message.OtherMessage(response)
-
+                    val currentMessages = _chatState.value.messages
+                    val newMessages = currentMessages + Message.OtherMessage(response)
+                    _chatState.value = ChatState(
+                        messages = newMessages,
+                        shouldShowKeyboard = newMessages.isNotEmpty()
+                    )
                 }
             }
         }
     }
 
     fun sendMyMessage(messageText: String) {
-        val currentMessages = _messages.value ?: emptyList()
-        _messages.value = currentMessages + Message.MyMessage(messageText)
+        _chatState.update { currentState ->
+            val currentMessages = currentState.messages
+            currentState.copy(currentMessages + Message.MyMessage(messageText))
+        }
     }
 }
